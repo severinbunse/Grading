@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PUCD 2125 — Grading Tool v2</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💯</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --page-w: 816px;
+      --accent: #1a1a1a;
+    }
+
+    body {
+      background: #d0d0d0;
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      line-height: 20px;
+      color: var(--accent);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      width: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      padding-right: 12px;
+      flex-shrink: 0;
+    }
+
+    #toolbar button {
+      padding: 8px 18px;
+    }
+
+    #toolbar button:hover { background: lightgrey; }
+
+    /* ── Page ── */
+    #page {
+      width: var(--page-w);
+      height: 1020px;
+      background: #fff;
+      padding: 30px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.15);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -.2px;
+    }
+
+    .student-name-input {
+      border: none;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: right;
+      outline: none;
+      background: transparent;
+      color: var(--accent);
+      flex: 1;
+      min-width: 0;
+      margin-left: 20px;
+    }
+
+    /* ── Project block ── */
+    #projects {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .project-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .project-label {
+      font-weight: 700;
+    }
+
+    .project-total {
+      font-weight: 700;
+      text-align: right;
+      min-width: 52px;
+    }
+    .project-total .total-max {
+      font-weight: 400;
+    }
+
+    /* ── Criterion row ── */
+    .criterion {
+      display: grid;
+      grid-template-columns: 152px 1fr 40px;
+      align-items: center;
+      row-gap: 8px;
+      column-gap: 6px;
+      padding: 3px 0;
+    }
+
+    .criterion-name {
+      font-weight: 400;
+    }
+
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      position: relative;
+    }
+
+    input[type="range"] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 1;
+      margin: 0;
+    }
+
+    .track-visual {
+      flex: 1;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      pointer-events: none;
+    }
+
+    .track-line {
+      width: 100%;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .track-thumb {
+      position: absolute;
+      width: 2px;
+      height: 14px;
+      background: var(--accent);
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .score-bubble {
+      text-align: right;
+      font-weight: 400;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .participation-criterion {
+      display: flex;
+      align-items: start;
+      gap: 28px;
+      padding: 3px 0;
+    }
+
+    .participation-criterion .part-unit {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ── Participation ── */
+    .participation-section {
+      padding: 12px 0;
+      margin-top: 16px;
+    }
+
+    .part-unit {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .part-unit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .unit-label {
+      font-weight: 700;
+    }
+
+    .part-unit-score {
+      color: var(--accent);
+      min-width: 40px;
+      text-align: right;
+      display: inline-block;
+    }
+
+    /* ── Grade box ── */
+    .grade-box {
+      border: 1px solid var(--accent);
+      border-bottom: none;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      margin-top: 16px;
+    }
+
+    .grade-box-desc {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 20px;
+      color: var(--accent);
+    }
+
+    .grade-box-right {
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .grade-letter {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 40px;
+    }
+
+    .grade-pts {
+      margin-top: 0;
+    }
+
+    /* ── Two-column layout ── */
+    .content-area {
+      display: flex;
+      gap: 28px;
+    }
+
+    .left-col {
+      flex: 3;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .right-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Legend ── */
+    .footer-legend {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .legend-name { font-weight: 700; font-size: 12px; hyphens: auto; }
+    .legend-desc { font-size: 12px; line-height: 16px; margin-bottom: 16px; hyphens: auto; }
+
+    .footer-meta {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 10px;
+    }
+
+    /* ── Comment box ── */
+    .comment-box {
+      margin-top: 0;
+      font-size: 15px;
+      font-family: Arial, sans-serif;
+      font-weight: 400;
+      line-height: 20px;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 28px;
+      outline: none;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .comment-box:empty::before {
+      content: attr(data-placeholder);
+      color: #aaa;
+    }
+
+    .track-line, .track-thumb {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── Print ── */
+    @media print {
+      @page { size: letter portrait; margin: 0; }
+
+      body { background: #fff; padding: 0; }
+      #toolbar { display: none !important; }
+
+      #page {
+        width: 816px;
+        height: 1020px;
+        box-shadow: none;
+      }
+
+      input[type="range"] { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <button onclick="window.print()">Export PDF</button>
+</div><div id="page">
+
+  <div class="page-header">
+    <h1 contenteditable="true" spellcheck="false">Core 2 Interaction, Spring 2026</h1>
+    <input class="student-name-input" type="text" placeholder="Student Name" />
+  </div>
+
+  <div class="content-area">
+
+    <div class="left-col">
+      <!-- Projects built by JS -->
+      <div id="projects"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="right-col">
+      <div class="footer-legend" id="footer-legend"></div>
+    </div>
+
+  </div>
+
+  <!-- Participation -->
+  <div class="participation-section">
+    <div class="participation-criterion">
+      <div class="criterion-name">Participation &amp;<br>Engagement</div>
+      <div class="part-unit">
+        <div class="part-unit-header">
+          <div class="unit-label">Unit 1</div>
+          <span class="part-unit-score" id="part-1-val">4/5</span>
+        </div>
+        <div class="slider-wrap" data-max="5" data-val="4">
+          <input type="range" min="0" max="5" step="0.5" value="4" class="part-slider" data-unit="1" />
+          <div class="track-visual"><div class="track-line"></div><div class="track-thumb" style="left:80%"></div></div>
+        </div>
+      </div>
+      <div class="part-unit">
+        <div class="part-unit-header">
+          <div class="unit-label">Unit 2</div>
+          <span class="part-unit-score" id="part-2-val">4/5</span>
+        </div>
+        <div class="slider-wrap" data-max="5" data-val="4">
+          <input type="range" min="0" max="5" step="0.5" value="4" class="part-slider" data-unit="2" />
+          <div class="track-visual"><div class="track-line"></div><div class="track-thumb" style="left:80%"></div></div>
+        </div>
+      </div>
+      <div class="part-unit">
+        <div class="part-unit-header">
+          <div class="unit-label">Unit 3</div>
+          <span class="part-unit-score" id="part-3-val">4/5</span>
+        </div>
+        <div class="slider-wrap" data-max="5" data-val="4">
+          <input type="range" min="0" max="5" step="0.5" value="4" class="part-slider" data-unit="3" />
+          <div class="track-visual"><div class="track-line"></div><div class="track-thumb" style="left:80%"></div></div>
+        </div>
+      </div>
+      <div class="project-total"><span class="total-score" id="part-score">12</span><span class="total-max">/15</span></div>
+    </div>
+  </div>
+
+  <!-- Grade box -->
+  <div class="grade-box">
+    <div class="grade-box-desc" id="grade-desc"></div>
+    <div class="grade-box-right">
+      <div class="grade-letter" id="final-grade">–</div>
+      <div class="grade-pts" id="final-pct"><strong>—</strong>/100 pts</div>
+    </div>
+  </div>
+
+  <div class="comment-box" contenteditable="true" spellcheck="false" data-placeholder="Comments…"></div>
+
+  <div class="footer-meta">
+    <span contenteditable="true" spellcheck="false">Instructor: Severin Bunse</span>
+    <span id="footer-date"></span>
+  </div>
+
+</div>
+
+<script>
+  const CRITERIA = [
+    { key: "conceptual", name: "Conceptual Thinking", desc: "Original and creative thinking, depth of investigation, and historic/contemporary context" },
+    { key: "process",    name: "Process",             desc: "Iteration, risk-taking, and refinement of ideas and skills towards the final project" },
+    { key: "response",   name: "Response",            desc: "Appropriateness of solution to original intention, problem, and audience" },
+    { key: "visual",     name: "Visual Quality",      desc: "Devotion to craft and attention to details of typography, form, composition" },
+    { key: "technical",  name: "Technical Realization", desc: "Ability to meaningfully build and realize design intentions through the final artifact" },
+  ];
+
+  const PROJECTS = [
+    { id: "p1", label: "Project 1", max: 25, pts: 5 },
+    { id: "p2", label: "Project 2", max: 30, pts: 6 },
+    { id: "p3", label: "Project 3", max: 30, pts: 6 },
+  ];
+
+  function defaultVal(max) { return max === 6 ? 4.5 : 3.5; }
+
+  // ── Build project blocks ───────────────────────────────────────────────────
+  const projectsEl = document.getElementById("projects");
+
+  PROJECTS.forEach(proj => {
+    const block = document.createElement("div");
+    block.className = "project-block";
+
+    const label = document.createElement("div");
+    label.className = "project-label";
+    label.textContent = proj.label;
+
+    const criteriaEl = document.createElement("div");
+    criteriaEl.className = "project-criteria";
+
+    CRITERIA.forEach(c => {
+      const row = document.createElement("div");
+      row.className = "criterion";
+      const defPct = (defaultVal(proj.pts) / proj.pts * 100).toFixed(2);
+      row.innerHTML = `
+        <div class="criterion-name">${c.name}</div>
+        <div class="slider-wrap" data-max="${proj.pts}" data-val="${defaultVal(proj.pts)}">
+          <input type="range" min="0" max="${proj.pts}" step="0.5" value="${defaultVal(proj.pts)}"
+                 class="criterion-slider"
+                 data-project="${proj.id}" data-criterion="${c.key}" />
+          <div class="track-visual">
+            <div class="track-line"></div>
+            <div class="track-thumb" style="left:${defPct}%"></div>
+          </div>
+        </div>
+        <span class="score-bubble" id="${proj.id}-${c.key}-val">0/${proj.pts}</span>
+      `;
+      criteriaEl.appendChild(row);
+    });
+
+    const total = document.createElement("div");
+    total.className = "project-total";
+    total.innerHTML = `<span class="total-score" id="${proj.id}-score">0</span><span class="total-max">/${proj.max}</span>`;
+
+    const header = document.createElement("div");
+    header.className = "project-header";
+    header.appendChild(label);
+    header.appendChild(total);
+
+    block.appendChild(header);
+    block.appendChild(criteriaEl);
+    projectsEl.appendChild(block);
+  });
+
+  // ── Footer legend ──────────────────────────────────────────────────────────
+  const legendEl = document.getElementById("footer-legend");
+  CRITERIA.forEach(c => {
+    const item = document.createElement("div");
+    item.innerHTML = `<div class="legend-name">${c.name}</div><div class="legend-desc">${c.desc}</div>`;
+    legendEl.appendChild(item);
+  });
+  const partItem = document.createElement("div");
+  partItem.innerHTML = `<div class="legend-name">Participation &amp; Engagement</div><div class="legend-desc">Active involvement in class discussions and activities. Contributing to a culture of dialogue and critique in the classroom.</div>`;
+  legendEl.appendChild(partItem);
+
+  // ── Grade scale ────────────────────────────────────────────────────────────
+  const GRADES = [
+    { min: 95, letter: "A",  desc: "Work of exceptional quality, often goes beyond the stated goals of the course" },
+    { min: 90, letter: "A−", desc: "Work of very high quality" },
+    { min: 86, letter: "B+", desc: "Work of high quality that indicates substantially higher than average abilities" },
+    { min: 84, letter: "B",  desc: "Very good work that satisfies the goals of the course" },
+    { min: 80, letter: "B−", desc: "Good work" },
+    { min: 76, letter: "C+", desc: "Above-average work" },
+    { min: 74, letter: "C",  desc: "Average work that indicates an understanding of the course material; passable" },
+    { min: 70, letter: "C−", desc: "Passing work but below good academic standing" },
+    { min: 60, letter: "D",  desc: "Below-average work that indicates a student does not fully understand the assignments" },
+    { min:  0, letter: "F",  desc: "Failure, no credit" },
+  ];
+
+  function letterGrade(s) { return (GRADES.find(g => s >= g.min) || GRADES.at(-1)).letter; }
+  function gradeDesc(s)   { return (GRADES.find(g => s >= g.min) || GRADES.at(-1)).desc; }
+
+  // ── Update ─────────────────────────────────────────────────────────────────
+  function update() {
+    let totals = { p1: 0, p2: 0, p3: 0 };
+
+    document.querySelectorAll(".criterion-slider").forEach(slider => {
+      const proj = slider.dataset.project;
+      const crit = slider.dataset.criterion;
+      const val  = parseFloat(slider.value);
+      const max  = parseFloat(slider.closest(".slider-wrap").dataset.max);
+      slider.closest(".slider-wrap").dataset.val = val;
+      slider.closest(".slider-wrap").querySelector(".track-thumb").style.left = (val / max * 100).toFixed(2) + "%";
+      document.getElementById(`${proj}-${crit}-val`).textContent = `${val}/${max}`;
+      totals[proj] += val;
+    });
+
+    let partTotal = 0;
+    document.querySelectorAll(".part-slider").forEach(slider => {
+      const unit = slider.dataset.unit;
+      const val  = parseFloat(slider.value);
+      slider.closest(".slider-wrap").dataset.val = val;
+      slider.closest(".slider-wrap").querySelector(".track-thumb").style.left = (val / 5 * 100).toFixed(2) + "%";
+      document.getElementById(`part-${unit}-val`).textContent = `${val}/5`;
+      partTotal += val;
+    });
+
+    document.getElementById("p1-score").textContent   = fmt(totals.p1);
+    document.getElementById("p2-score").textContent   = fmt(totals.p2);
+    document.getElementById("p3-score").textContent   = fmt(totals.p3);
+    document.getElementById("part-score").textContent = fmt(partTotal);
+
+    const grand = totals.p1 + totals.p2 + totals.p3 + partTotal;
+    document.getElementById("final-grade").textContent = grand > 0 ? letterGrade(grand) : "–";
+    document.getElementById("final-pct").innerHTML   = `<strong>${fmt(grand)}</strong>/100 pts`;
+    document.getElementById("grade-desc").textContent  = grand > 0 ? gradeDesc(grand) : "";
+  }
+
+  function fmt(n) { return n % 1 === 0 ? n.toString() : n.toFixed(1); }
+
+  document.addEventListener("input", e => {
+    if (e.target.matches("input[type='range']")) update();
+  });
+
+  document.getElementById("footer-date").textContent =
+    new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  update();
+
+  const commentBox = document.querySelector('.comment-box');
+  let lastValidHTML = commentBox.innerHTML;
+  let lastValidSize = { fontSize: '', lineHeight: '' };
+
+  commentBox.addEventListener('input', () => {
+    // Try normal size first
+    commentBox.style.fontSize = '';
+    commentBox.style.lineHeight = '';
+
+    if (commentBox.scrollHeight <= commentBox.clientHeight) {
+      // Fits at normal size
+      lastValidHTML = commentBox.innerHTML;
+      lastValidSize = { fontSize: '', lineHeight: '' };
+      return;
+    }
+
+    // Try small size
+    commentBox.style.fontSize = '12px';
+    commentBox.style.lineHeight = '16px';
+
+    if (commentBox.scrollHeight <= commentBox.clientHeight) {
+      // Fits at small size
+      lastValidHTML = commentBox.innerHTML;
+      lastValidSize = { fontSize: '12px', lineHeight: '16px' };
+      return;
+    }
+
+    // Doesn't fit at all — revert
+    commentBox.innerHTML = lastValidHTML;
+    commentBox.style.fontSize = lastValidSize.fontSize;
+    commentBox.style.lineHeight = lastValidSize.lineHeight;
+    const range = document.createRange();
+    range.selectNodeContents(commentBox);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+</script>
+</body>
+</html>
